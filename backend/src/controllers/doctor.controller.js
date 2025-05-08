@@ -7,7 +7,7 @@ exports.getAllDoctors = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'user',
+          as: 'doctorUser',
           attributes: ['id', 'name', 'email', 'phone', 'address']
         }
       ]
@@ -29,7 +29,7 @@ exports.getDoctorById = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'user',
+          as: 'doctorUser',
           attributes: ['id', 'name', 'email', 'phone', 'address']
         }
       ]
@@ -60,7 +60,7 @@ exports.updateDoctor = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'user'
+          as: 'doctorUser'
         }
       ]
     });
@@ -70,7 +70,7 @@ exports.updateDoctor = async (req, res) => {
     }
 
     // Check if user is authorized to update this doctor
-    if (req.user.role === 'doctor' && req.user.id !== doctor.user.id) {
+    if (req.user.role === 'doctor' && req.user.id !== doctor.doctorUser.id) {
       return res.status(403).json({ message: 'Not authorized to update this doctor' });
     }
 
@@ -119,7 +119,7 @@ exports.getDoctorAppointments = async (req, res) => {
           include: [
             {
               model: User,
-              as: 'user',
+              as: 'patientUser',
               attributes: ['id', 'name', 'email']
             }
           ]
@@ -130,7 +130,7 @@ exports.getDoctorAppointments = async (req, res) => {
           include: [
             {
               model: User,
-              as: 'user',
+              as: 'doctorUser',
               attributes: ['id', 'name', 'email']
             }
           ]
@@ -177,7 +177,7 @@ exports.getDoctorPatients = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'user',
+          as: 'patientUser',
           attributes: ['id', 'name', 'email', 'phone']
         }
       ]

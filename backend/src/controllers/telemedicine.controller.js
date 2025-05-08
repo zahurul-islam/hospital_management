@@ -8,10 +8,10 @@ dotenv.config();
 const createZoomMeeting = async (topic, startTime, duration) => {
   // In a real implementation, this would call the Zoom API
   // For now, we'll mock the response
-  
+
   const meetingId = Math.floor(100000000 + Math.random() * 900000000);
   const password = Math.random().toString(36).substring(2, 10);
-  
+
   return {
     id: meetingId,
     password: password,
@@ -29,31 +29,31 @@ exports.getAllTelemedicineSessions = async (req, res) => {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to access all telemedicine sessions' });
     }
-    
+
     const telemedicineSessions = await TelemedicineSession.findAll({
       include: [
         {
           model: Appointment,
-          as: 'appointment',
+          as: 'appointmentSession',
           include: [
             {
               model: Patient,
-              as: 'patient',
+              as: 'appointmentPatient',
               include: [
                 {
                   model: User,
-                  as: 'user',
+                  as: 'patientUser',
                   attributes: ['id', 'name', 'email']
                 }
               ]
             },
             {
               model: Doctor,
-              as: 'doctor',
+              as: 'appointmentDoctor',
               include: [
                 {
                   model: User,
-                  as: 'user',
+                  as: 'doctorUser',
                   attributes: ['id', 'name', 'email']
                 }
               ]
@@ -63,7 +63,7 @@ exports.getAllTelemedicineSessions = async (req, res) => {
       ],
       order: [['createdAt', 'DESC']]
     });
-    
+
     return res.status(200).json(telemedicineSessions);
   } catch (error) {
     console.error('Get all telemedicine sessions error:', error);
@@ -75,31 +75,31 @@ exports.getAllTelemedicineSessions = async (req, res) => {
 exports.getTelemedicineSessionById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const telemedicineSession = await TelemedicineSession.findByPk(id, {
       include: [
         {
           model: Appointment,
-          as: 'appointment',
+          as: 'appointmentSession',
           include: [
             {
               model: Patient,
-              as: 'patient',
+              as: 'appointmentPatient',
               include: [
                 {
                   model: User,
-                  as: 'user',
+                  as: 'patientUser',
                   attributes: ['id', 'name', 'email']
                 }
               ]
             },
             {
               model: Doctor,
-              as: 'doctor',
+              as: 'appointmentDoctor',
               include: [
                 {
                   model: User,
-                  as: 'user',
+                  as: 'doctorUser',
                   attributes: ['id', 'name', 'email']
                 }
               ]
@@ -108,24 +108,24 @@ exports.getTelemedicineSessionById = async (req, res) => {
         }
       ]
     });
-    
+
     if (!telemedicineSession) {
       return res.status(404).json({ message: 'Telemedicine session not found' });
     }
-    
+
     // Check if user is authorized to view this telemedicine session
     if (req.user.role === 'patient') {
       const patient = await Patient.findOne({ where: { userId: req.user.id } });
-      if (!patient || patient.id !== telemedicineSession.appointment.patientId) {
+      if (!patient || patient.id !== telemedicineSession.appointmentSession.patientId) {
         return res.status(403).json({ message: 'Not authorized to view this telemedicine session' });
       }
     } else if (req.user.role === 'doctor') {
       const doctor = await Doctor.findOne({ where: { userId: req.user.id } });
-      if (!doctor || doctor.id !== telemedicineSession.appointment.doctorId) {
+      if (!doctor || doctor.id !== telemedicineSession.appointmentSession.doctorId) {
         return res.status(403).json({ message: 'Not authorized to view this telemedicine session' });
       }
     }
-    
+
     return res.status(200).json(telemedicineSession);
   } catch (error) {
     console.error('Get telemedicine session by ID error:', error);
@@ -137,44 +137,44 @@ exports.getTelemedicineSessionById = async (req, res) => {
 exports.createOrUpdateTelemedicineSession = async (req, res) => {
   try {
     const { appointmentId } = req.body;
-    
+
     // Validate appointment
     const appointment = await Appointment.findByPk(appointmentId, {
       include: [
         {
           model: Patient,
-          as: 'patient',
+          as: 'appointmentPatient',
           include: [
             {
               model: User,
-              as: 'user',
+              as: 'patientUser',
               attributes: ['id', 'name', 'email']
             }
           ]
         },
         {
           model: Doctor,
-          as: 'doctor',
+          as: 'appointmentDoctor',
           include: [
             {
               model: User,
-              as: 'user',
+              as: 'doctorUser',
               attributes: ['id', 'name', 'email']
             }
           ]
         }
       ]
     });
-    
+
     if (!appointment) {
       return res.status(404).json({ message: 'Appointment not found' });
     }
-    
+
     // Check if appointment is a video appointment
     if (appointment.type !== 'video') {
       return res.status(400).json({ message: 'Appointment is not a video appointment' });
     }
-    
+
     // Check if user is authorized to create/update this telemedicine session
     if (req.user.role === 'doctor') {
       const doctor = await Doctor.findOne({ where: { userId: req.user.id } });
@@ -184,19 +184,19 @@ exports.createOrUpdateTelemedicineSession = async (req, res) => {
     } else if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Only doctors and admins can manage telemedicine sessions' });
     }
-    
+
     // Check if telemedicine session already exists
     let telemedicineSession = await TelemedicineSession.findOne({
       where: { appointmentId }
     });
-    
+
     // Create Zoom meeting
-    const meetingTopic = `Appointment with Dr. ${appointment.doctor.user.name} and ${appointment.patient.user.name}`;
+    const meetingTopic = `Appointment with Dr. ${appointment.appointmentDoctor.doctorUser.name} and ${appointment.appointmentPatient.patientUser.name}`;
     const startTime = new Date(`${appointment.date}T${appointment.time}`);
     const duration = appointment.duration;
-    
+
     const zoomMeeting = await createZoomMeeting(meetingTopic, startTime, duration);
-    
+
     if (telemedicineSession) {
       // Update existing session
       await telemedicineSession.update({
@@ -221,7 +221,7 @@ exports.createOrUpdateTelemedicineSession = async (req, res) => {
         status: 'scheduled'
       });
     }
-    
+
     return res.status(200).json({
       message: 'Telemedicine session created/updated successfully',
       telemedicineSession
@@ -236,36 +236,36 @@ exports.createOrUpdateTelemedicineSession = async (req, res) => {
 exports.startTelemedicineSession = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const telemedicineSession = await TelemedicineSession.findByPk(id, {
       include: [
         {
           model: Appointment,
-          as: 'appointment'
+          as: 'appointmentSession'
         }
       ]
     });
-    
+
     if (!telemedicineSession) {
       return res.status(404).json({ message: 'Telemedicine session not found' });
     }
-    
+
     // Check if user is authorized to start this session
     if (req.user.role === 'doctor') {
       const doctor = await Doctor.findOne({ where: { userId: req.user.id } });
-      if (!doctor || doctor.id !== telemedicineSession.appointment.doctorId) {
+      if (!doctor || doctor.id !== telemedicineSession.appointmentSession.doctorId) {
         return res.status(403).json({ message: 'Not authorized to start this telemedicine session' });
       }
     } else if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Only doctors and admins can start telemedicine sessions' });
     }
-    
+
     // Update session status
     await telemedicineSession.update({
       status: 'in-progress',
       startTime: new Date()
     });
-    
+
     return res.status(200).json({
       message: 'Telemedicine session started successfully',
       hostUrl: telemedicineSession.hostUrl
@@ -281,30 +281,30 @@ exports.endTelemedicineSession = async (req, res) => {
   try {
     const { id } = req.params;
     const { notes, recordingUrl } = req.body;
-    
+
     const telemedicineSession = await TelemedicineSession.findByPk(id, {
       include: [
         {
           model: Appointment,
-          as: 'appointment'
+          as: 'appointmentSession'
         }
       ]
     });
-    
+
     if (!telemedicineSession) {
       return res.status(404).json({ message: 'Telemedicine session not found' });
     }
-    
+
     // Check if user is authorized to end this session
     if (req.user.role === 'doctor') {
       const doctor = await Doctor.findOne({ where: { userId: req.user.id } });
-      if (!doctor || doctor.id !== telemedicineSession.appointment.doctorId) {
+      if (!doctor || doctor.id !== telemedicineSession.appointmentSession.doctorId) {
         return res.status(403).json({ message: 'Not authorized to end this telemedicine session' });
       }
     } else if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Only doctors and admins can end telemedicine sessions' });
     }
-    
+
     // Update session status
     await telemedicineSession.update({
       status: 'completed',
@@ -312,13 +312,13 @@ exports.endTelemedicineSession = async (req, res) => {
       notes,
       recordingUrl
     });
-    
+
     // Update appointment status
     await Appointment.update(
       { status: 'completed' },
       { where: { id: telemedicineSession.appointmentId } }
     );
-    
+
     return res.status(200).json({ message: 'Telemedicine session ended successfully' });
   } catch (error) {
     console.error('End telemedicine session error:', error);

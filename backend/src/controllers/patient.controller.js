@@ -7,7 +7,7 @@ exports.getAllPatients = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'user',
+          as: 'patientUser',
           attributes: ['id', 'name', 'email', 'phone', 'address']
         }
       ]
@@ -29,7 +29,7 @@ exports.getPatientById = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'user',
+          as: 'patientUser',
           attributes: ['id', 'name', 'email', 'phone', 'address']
         }
       ]
@@ -40,7 +40,7 @@ exports.getPatientById = async (req, res) => {
     }
 
     // Check if user is authorized to view this patient
-    if (req.user.role === 'patient' && req.user.id !== patient.user.id) {
+    if (req.user.role === 'patient' && req.user.id !== patient.patientUser.id) {
       return res.status(403).json({ message: 'Not authorized to view this patient' });
     }
 
@@ -61,7 +61,7 @@ exports.updatePatient = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'user'
+          as: 'patientUser'
         }
       ]
     });
@@ -71,7 +71,7 @@ exports.updatePatient = async (req, res) => {
     }
 
     // Check if user is authorized to update this patient
-    if (req.user.role === 'patient' && req.user.id !== patient.user.id) {
+    if (req.user.role === 'patient' && req.user.id !== patient.patientUser.id) {
       return res.status(403).json({ message: 'Not authorized to update this patient' });
     }
 
@@ -117,7 +117,7 @@ exports.getPatientAppointments = async (req, res) => {
           include: [
             {
               model: User,
-              as: 'user',
+              as: 'patientUser',
               attributes: ['id', 'name', 'email']
             }
           ]
@@ -128,7 +128,7 @@ exports.getPatientAppointments = async (req, res) => {
           include: [
             {
               model: User,
-              as: 'user',
+              as: 'doctorUser',
               attributes: ['id', 'name', 'email']
             }
           ]
@@ -168,7 +168,7 @@ exports.getPatientMedicalRecords = async (req, res) => {
           include: [
             {
               model: User,
-              as: 'user',
+              as: 'doctorUser',
               attributes: ['id', 'name']
             }
           ]
