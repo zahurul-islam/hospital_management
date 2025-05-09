@@ -1,42 +1,78 @@
-# Hospital Management System with Video Call Appointments
+# Green University Hospital Management System
 
 A comprehensive hospital management system that enables patients and doctors to log in, access relevant information, book appointments (including video call appointments), conduct virtual consultations, and store all data securely.
 
 ## Features
 
-- **User Authentication**: Secure login with role-based access for patients, doctors, and admins.
+- **User Authentication**:
+  - Secure login with role-based access for patients, doctors, and admins
+  - Social login with Google, Facebook, and Apple accounts
+  - JWT-based authentication
+
 - **Patient Portal**:
   - Register and log in
-  - View health records
+  - View and manage personal health records
   - Book appointments (in-person or video call)
   - Join video call consultations
+  - View appointment history
+  - Receive notifications for upcoming appointments
+
 - **Doctor Portal**:
+  - Complete doctor profile with specialty, qualifications, and license information
   - View patient lists and medical records
-  - Manage appointments
+  - Manage appointments and schedules
   - Conduct virtual consultations
+  - Track patient history
+  - Manage availability for appointments
+
 - **Admin Portal**:
-  - Manage user accounts
-  - Monitor system data
-  - Generate reports
+  - Manage user accounts (patients, doctors, staff)
+  - Monitor system data and usage
+  - Generate reports and analytics
+  - Configure system settings
+
 - **Telemedicine**:
   - Secure video conferencing for virtual consultations
   - Features for scheduling, joining, and documenting video call appointments
+  - Screen sharing and chat functionality
+  - Recording options for consultations (with consent)
 
 ## Tech Stack
 
-- **Frontend**: React with Material UI
-- **Backend**: Node.js with Express
-- **Database**: PostgreSQL with Sequelize ORM
-- **Authentication**: JWT (JSON Web Tokens)
+- **Frontend**:
+  - React 18 with Material UI 5
+  - Vite for fast development and building
+  - React Router for navigation
+  - Context API for state management
+
+- **Backend**:
+  - Node.js with Express
+  - RESTful API architecture
+  - JWT for authentication
+  - Passport.js for social authentication
+
+- **Database**:
+  - SQLite (development)
+  - PostgreSQL (production) with Sequelize ORM
+
+- **Video Calling**:
+  - WebRTC for peer-to-peer video communication
+  - Socket.IO for signaling
 
 ## Getting Started
 
+For detailed setup instructions, please refer to:
+- [Windows Installation Guide](docs/WINDOWS_INSTALLATION.md)
+- [Linux/Mac Setup Guide](docs/UNIX_SETUP.md)
+- [Social Authentication Setup](docs/OAUTH_SETUP.md)
+
 ### Prerequisites
 
-- Node.js (v14 or higher)
-- PostgreSQL
+- Node.js (v16 or higher)
+- npm (v8 or higher)
+- Git
 
-### Installation
+### Quick Installation
 
 1. Clone the repository:
    ```
@@ -50,11 +86,7 @@ A comprehensive hospital management system that enables patients and doctors to 
    npm install
    ```
 
-3. Configure the database:
-   - Create a PostgreSQL database named `hospital_management`
-   - Update the `.env` file with your database credentials
-
-4. Set up the frontend:
+3. Set up the frontend:
    ```
    cd ../frontend
    npm install
@@ -65,7 +97,7 @@ A comprehensive hospital management system that enables patients and doctors to 
 1. Start the backend server:
    ```
    cd backend
-   npm run dev
+   npm start
    ```
 
 2. Start the frontend development server:
