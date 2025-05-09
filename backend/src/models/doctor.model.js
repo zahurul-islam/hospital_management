@@ -38,8 +38,15 @@ const Doctor = sequelize.define('Doctor', {
     allowNull: true
   },
   availableDays: {
-    type: DataTypes.ARRAY(DataTypes.STRING),
-    allowNull: true
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const value = this.getDataValue('availableDays');
+      return value ? JSON.parse(value) : [];
+    },
+    set(value) {
+      this.setDataValue('availableDays', JSON.stringify(value));
+    }
   },
   availableTimeStart: {
     type: DataTypes.TIME,

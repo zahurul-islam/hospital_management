@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { appointmentService } from '../services/api';
@@ -83,17 +83,17 @@ const AppointmentDetails = () => {
   const appointmentDate = new Date(appointment.date);
   const formattedDate = appointmentDate.toLocaleDateString();
   const formattedTime = appointment.time.substring(0, 5);
-  
-  const canJoinCall = appointment.type === 'video' && 
-                      appointment.status === 'scheduled' && 
+
+  const canJoinCall = appointment.type === 'video' &&
+                      appointment.status === 'scheduled' &&
                       appointment.telemedicineSession?.joinUrl;
 
   return (
     <Box>
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
-        <Button 
-          component={Link} 
-          to={user.role === 'patient' ? '/patient/appointments' : '/doctor/appointments'} 
+        <Button
+          component={Link}
+          to={user.role === 'patient' ? '/patient/appointments' : '/doctor/appointments'}
           startIcon={<ArrowBack />}
           sx={{ mr: 2 }}
         >
@@ -103,7 +103,7 @@ const AppointmentDetails = () => {
           Appointment Details
         </Typography>
       </Box>
-      
+
       <Paper sx={{ p: 3, mb: 3 }}>
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6}>
@@ -114,50 +114,50 @@ const AppointmentDetails = () => {
               {appointment.id}
             </Typography>
           </Grid>
-          
+
           <Grid item xs={12} sm={6}>
             <Typography variant="subtitle1" color="text.secondary">
               Status
             </Typography>
-            <Chip 
-              label={appointment.status} 
-              color={getStatusChipColor(appointment.status)} 
+            <Chip
+              label={appointment.status}
+              color={getStatusChipColor(appointment.status)}
               sx={{ mt: 0.5 }}
             />
           </Grid>
-          
+
           <Grid item xs={12}>
             <Divider />
           </Grid>
-          
+
           <Grid item xs={12} sm={6}>
             <Typography variant="subtitle1" color="text.secondary">
               Patient
             </Typography>
             <Typography variant="body1" gutterBottom>
-              {appointment.patient.user.name}
+              {appointment.appointmentPatient.patientUser.name}
             </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              {appointment.patient.user.email}
+              {appointment.appointmentPatient.patientUser.email}
             </Typography>
           </Grid>
-          
+
           <Grid item xs={12} sm={6}>
             <Typography variant="subtitle1" color="text.secondary">
               Doctor
             </Typography>
             <Typography variant="body1" gutterBottom>
-              Dr. {appointment.doctor.user.name}
+              Dr. {appointment.appointmentDoctor.doctorUser.name}
             </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              {appointment.doctor.specialty}
+              {appointment.appointmentDoctor.specialty}
             </Typography>
           </Grid>
-          
+
           <Grid item xs={12}>
             <Divider />
           </Grid>
-          
+
           <Grid item xs={12} sm={6}>
             <Typography variant="subtitle1" color="text.secondary">
               Date & Time
@@ -166,7 +166,7 @@ const AppointmentDetails = () => {
               {formattedDate} at {formattedTime}
             </Typography>
           </Grid>
-          
+
           <Grid item xs={12} sm={6}>
             <Typography variant="subtitle1" color="text.secondary">
               Appointment Type
@@ -178,7 +178,7 @@ const AppointmentDetails = () => {
               Duration: {appointment.duration} minutes
             </Typography>
           </Grid>
-          
+
           {appointment.reason && (
             <Grid item xs={12}>
               <Typography variant="subtitle1" color="text.secondary">
@@ -189,7 +189,7 @@ const AppointmentDetails = () => {
               </Typography>
             </Grid>
           )}
-          
+
           {appointment.notes && (
             <Grid item xs={12}>
               <Typography variant="subtitle1" color="text.secondary">
@@ -200,7 +200,7 @@ const AppointmentDetails = () => {
               </Typography>
             </Grid>
           )}
-          
+
           {canJoinCall && (
             <Grid item xs={12}>
               <Box sx={{ mt: 2 }}>

@@ -1,4 +1,5 @@
 const { Doctor, User, Appointment, MedicalRecord, Patient } = require('../models');
+const { Op } = require('sequelize');
 
 // Get all doctors
 exports.getAllDoctors = async (req, res) => {
@@ -187,5 +188,80 @@ exports.getDoctorPatients = async (req, res) => {
   } catch (error) {
     console.error('Get doctor patients error:', error);
     return res.status(500).json({ message: 'Error getting patients', error: error.message });
+  }
+};
+
+// Create or update doctor profile
+exports.createDoctorProfile = async (req, res) => {
+  try {
+    const { userId, specialty, qualification, experience, licenseNumber, consultationFee, bio } = req.body;
+
+    // Check if user exists and is a doctor
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.role !== 'doctor') {
+      return res.status(400).json({ message: 'User is not a doctor' });
+    }
+
+    // Check if user is authorized to create/update this doctor profile
+    if (req.user.id !== userId) {
+      return res.status(403).json({ message: 'Not authorized to create/update this doctor profile' });
+    }
+
+    // Check if license number is already used
+    if (licenseNumber) {
+      const existingDoctor = await Doctor.findOne({
+        where: {
+          licenseNumber,
+          userId: { [Op.ne]: userId } // Exclude current user
+        }
+      });
+
+      if (existingDoctor) {
+        return res.status(400).json({ message: 'License number is already in use' });
+      }
+    }
+
+    // Check if doctor profile already exists
+    let doctor = await Doctor.findOne({ where: { userId } });
+
+    if (doctor) {
+      // Update existing doctor profile
+      await doctor.update({
+        specialty,
+        qualification,
+        experience,
+        licenseNumber,
+        consultationFee,
+        bio
+      });
+
+      return res.status(200).json({
+        message: 'Doctor profile updated successfully',
+        doctor
+      });
+    } else {
+      // Create new doctor profile
+      doctor = await Doctor.create({
+        userId,
+        specialty,
+        qualification,
+        experience,
+        licenseNumber,
+        consultationFee,
+        bio
+      });
+
+      return res.status(201).json({
+        message: 'Doctor profile created successfully',
+        doctor
+      });
+    }
+  } catch (error) {
+    console.error('Create/update doctor profile error:', error);
+    return res.status(500).json({ message: 'Error creating/updating doctor profile', error: error.message });
   }
 };

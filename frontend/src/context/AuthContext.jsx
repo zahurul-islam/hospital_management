@@ -8,32 +8,76 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // Check if user is logged in
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
+  const getProfile = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+      const response = await authService.getProfile();
+
+      const { user: userData, profile } = response.data;
+
+      // Update user with profile data
+      const updatedUser = { ...userData, profile };
+
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      setUser(updatedUser);
+
+      return updatedUser;
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to get profile');
+      throw error;
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      // Check if user is logged in
+      const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+
+      if (storedUser && token) {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+
+        // Always fetch fresh profile data
+        try {
+          await getProfile();
+        } catch (err) {
+          console.error('Error fetching profile:', err);
+        }
+      }
+
+      setLoading(false);
+    };
+
+    init();
   }, []);
 
   const login = async (email, password) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await authService.login({ email, password });
-      
+
       const { user, token } = response.data;
-      
+
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
-      
+
       setUser(user);
-      
+
+      // Fetch profile data immediately after login
+      try {
+        await getProfile();
+      } catch (err) {
+        console.error('Error fetching profile after login:', err);
+      }
+
       return user;
     } catch (error) {
       setError(error.response?.data?.message || 'Login failed');
@@ -47,16 +91,23 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await authService.register(userData);
-      
+
       const { user, token } = response.data;
-      
+
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
-      
+
       setUser(user);
-      
+
+      // Fetch profile data immediately after registration
+      try {
+        await getProfile();
+      } catch (err) {
+        console.error('Error fetching profile after registration:', err);
+      }
+
       return user;
     } catch (error) {
       setError(error.response?.data?.message || 'Registration failed');
@@ -70,31 +121,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-  };
-
-  const getProfile = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await authService.getProfile();
-      
-      const { user, profile } = response.data;
-      
-      // Update user with profile data
-      const updatedUser = { ...user, profile };
-      
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      
-      setUser(updatedUser);
-      
-      return updatedUser;
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to get profile');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (

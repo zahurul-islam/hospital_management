@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { telemedicineService } from '../services/api';
@@ -66,18 +66,18 @@ const VideoCall = () => {
   const startCall = async () => {
     try {
       setLoading(true);
-      
+
       if (user.role === 'doctor') {
         // Only doctors can start the call
         await telemedicineService.startTelemedicineSession(id);
       }
-      
+
       setCallActive(true);
-      
+
       // In a real app, this would initialize the video call using the telemedicine API
       // For this demo, we'll just simulate a call
       console.log('Starting video call...');
-      
+
       // Redirect to the video call URL if available
       if (session.hostUrl && user.role === 'doctor') {
         window.open(session.hostUrl, '_blank');
@@ -121,17 +121,17 @@ const VideoCall = () => {
   const endCall = async () => {
     try {
       setLoading(true);
-      
+
       if (user.role === 'doctor') {
         // Only doctors can end the call officially
         await telemedicineService.endTelemedicineSession(id, {
           notes: notes
         });
       }
-      
+
       setCallActive(false);
       handleEndCallDialogClose();
-      
+
       // Navigate back to appointments
       if (user.role === 'patient') {
         navigate('/patient/appointments');
@@ -175,23 +175,23 @@ const VideoCall = () => {
     );
   }
 
-  const appointmentDate = new Date(session.appointment.date);
+  const appointmentDate = new Date(session.appointmentSession.date);
   const formattedDate = appointmentDate.toLocaleDateString();
-  const formattedTime = session.appointment.time.substring(0, 5);
+  const formattedTime = session.appointmentSession.time.substring(0, 5);
 
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
         Video Consultation
       </Typography>
-      
+
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
-          <Paper 
-            sx={{ 
-              p: 2, 
-              height: 480, 
-              display: 'flex', 
+          <Paper
+            sx={{
+              p: 2,
+              height: 480,
+              display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
@@ -201,10 +201,10 @@ const VideoCall = () => {
             {callActive ? (
               <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
                 {/* Main video area - in a real app, this would show the video stream */}
-                <Box 
-                  sx={{ 
-                    width: '100%', 
-                    height: '100%', 
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '100%',
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center'
@@ -220,10 +220,10 @@ const VideoCall = () => {
                     </Typography>
                   )}
                 </Box>
-                
+
                 {/* Self view - in a real app, this would show your own camera */}
-                <Box 
-                  sx={{ 
+                <Box
+                  sx={{
                     position: 'absolute',
                     bottom: 16,
                     right: 16,
@@ -262,7 +262,7 @@ const VideoCall = () => {
               </Box>
             )}
           </Paper>
-          
+
           {/* Call controls */}
           <Paper sx={{ p: 2, mt: 2, display: 'flex', justifyContent: 'center', gap: 2 }}>
             <Button
@@ -274,7 +274,7 @@ const VideoCall = () => {
             >
               {audioEnabled ? 'Mute' : 'Unmute'}
             </Button>
-            
+
             <Button
               variant="contained"
               color={videoEnabled ? 'primary' : 'error'}
@@ -284,7 +284,7 @@ const VideoCall = () => {
             >
               {videoEnabled ? 'Turn Off Camera' : 'Turn On Camera'}
             </Button>
-            
+
             <Button
               variant="contained"
               color="error"
@@ -294,7 +294,7 @@ const VideoCall = () => {
             >
               End Call
             </Button>
-            
+
             {user.role === 'doctor' && callActive && (
               <Button
                 variant="contained"
@@ -307,7 +307,7 @@ const VideoCall = () => {
             )}
           </Paper>
         </Grid>
-        
+
         <Grid item xs={12} md={4}>
           <Card>
             <CardContent>
@@ -315,44 +315,44 @@ const VideoCall = () => {
                 Appointment Details
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              
+
               <Typography variant="subtitle1">
                 {user.role === 'patient' ? 'Doctor' : 'Patient'}
               </Typography>
               <Typography variant="body1" gutterBottom>
-                {user.role === 'patient' 
-                  ? `Dr. ${session.appointment.doctor.user.name}` 
-                  : session.appointment.patient.user.name}
+                {user.role === 'patient'
+                  ? `Dr. ${session.appointmentSession.appointmentDoctor.doctorUser.name}`
+                  : session.appointmentSession.appointmentPatient.patientUser.name}
               </Typography>
-              
+
               <Typography variant="subtitle1" sx={{ mt: 2 }}>
                 Date & Time
               </Typography>
               <Typography variant="body1" gutterBottom>
                 {formattedDate} at {formattedTime}
               </Typography>
-              
-              {session.appointment.reason && (
+
+              {session.appointmentSession.reason && (
                 <>
                   <Typography variant="subtitle1" sx={{ mt: 2 }}>
                     Reason for Visit
                   </Typography>
                   <Typography variant="body1" gutterBottom>
-                    {session.appointment.reason}
+                    {session.appointmentSession.reason}
                   </Typography>
                 </>
               )}
-              
+
               <Alert severity="info" sx={{ mt: 2 }}>
-                {callActive 
-                  ? 'Call is in progress. You can end the call using the controls below the video.' 
+                {callActive
+                  ? 'Call is in progress. You can end the call using the controls below the video.'
                   : 'Click "Start Video Call" to begin the consultation.'}
               </Alert>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
-      
+
       {/* End Call Dialog */}
       <Dialog
         open={endCallDialogOpen}
@@ -373,7 +373,7 @@ const VideoCall = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Notes Dialog (for doctors) */}
       <Dialog
         open={notesDialogOpen}

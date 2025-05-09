@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { doctorService } from '../../services/api';
-import { 
-  Box, 
-  Typography, 
-  Grid, 
-  Card, 
-  CardContent, 
-  Button, 
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Button,
   Divider,
   List,
   ListItem,
@@ -18,10 +18,11 @@ import {
   CircularProgress,
   Chip
 } from '@mui/material';
-import { 
-  CalendarMonth, 
-  VideoCall, 
-  People
+import {
+  CalendarMonth,
+  VideoCall,
+  People,
+  LocalHospital
 } from '@mui/icons-material';
 
 const DoctorDashboard = () => {
@@ -39,30 +40,41 @@ const DoctorDashboard = () => {
         setLoading(true);
         setError('');
 
+        console.log('User data:', user);
+
+        // Check if we have a doctor profile
+        if (!user || !user.profile || !user.profile.id) {
+          setError('Doctor profile not found. Please complete your profile setup.');
+          setLoading(false);
+          return;
+        }
+
         // Get doctor profile
-        const doctorResponse = await doctorService.getDoctorById(user.profile?.id);
+        const doctorResponse = await doctorService.getDoctorById(user.profile.id);
         setDoctorData(doctorResponse.data);
+        console.log('Doctor data:', doctorResponse.data);
 
         // Get doctor appointments
-        const appointmentsResponse = await doctorService.getDoctorAppointments(user.profile?.id);
-        
+        const appointmentsResponse = await doctorService.getDoctorAppointments(user.profile.id);
+        console.log('Appointments data:', appointmentsResponse.data);
+
         // Filter today's appointments
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayStr = today.toISOString().split('T')[0];
-        
+
         const todaysAppts = appointmentsResponse.data
           .filter(appointment => {
             return appointment.date === todayStr && appointment.status !== 'cancelled';
           })
           .sort((a, b) => a.time.localeCompare(b.time));
-        
+
         setTodayAppointments(todaysAppts);
-        
+
         // Filter upcoming appointments (excluding today)
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        
+
         const upcoming = appointmentsResponse.data
           .filter(appointment => {
             const appointmentDate = new Date(appointment.date);
@@ -70,21 +82,21 @@ const DoctorDashboard = () => {
           })
           .sort((a, b) => new Date(a.date) - new Date(b.date))
           .slice(0, 5);
-        
+
         setUpcomingAppointments(upcoming);
 
         // Get patient count
-        const patientsResponse = await doctorService.getDoctorPatients(user.profile?.id);
+        const patientsResponse = await doctorService.getDoctorPatients(user.profile.id);
         setPatientCount(patientsResponse.data.length);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        setError('Failed to load dashboard data. Please try again later.');
+        setError('Failed to load dashboard data: ' + (error.response?.data?.message || error.message));
       } finally {
         setLoading(false);
       }
     };
 
-    if (user && user.profile) {
+    if (user && user.role === 'doctor') {
       fetchDashboardData();
     }
   }, [user]);
@@ -99,9 +111,56 @@ const DoctorDashboard = () => {
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ mt: 2 }}>
-        {error}
-      </Alert>
+      <Box sx={{ mt: 4, p: 2 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+
+        {error.includes('Doctor profile not found') && (
+          <Paper sx={{ p: 3, mt: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Doctor Profile Setup Required
+            </Typography>
+            <Typography variant="body1" paragraph>
+              It looks like your doctor profile is not properly set up. This can happen if:
+            </Typography>
+            <ul>
+              <li>
+                <Typography variant="body1">
+                  You registered as a doctor but didn't provide all required information
+                </Typography>
+              </li>
+              <li>
+                <Typography variant="body1">
+                  Your doctor profile wasn't created in the database
+                </Typography>
+              </li>
+            </ul>
+            <Typography variant="body1" paragraph>
+              Please complete your doctor profile to access the dashboard.
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                component={Link}
+                to="/doctor/create-profile"
+                sx={{ mr: 2 }}
+                startIcon={<LocalHospital />}
+              >
+                Complete Doctor Profile
+              </Button>
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => window.location.reload()}
+              >
+                Refresh Page
+              </Button>
+            </Box>
+          </Paper>
+        )}
+      </Box>
     );
   }
 
@@ -110,7 +169,7 @@ const DoctorDashboard = () => {
       <Typography variant="h4" gutterBottom>
         Welcome, Dr. {user?.name}
       </Typography>
-      
+
       <Grid container spacing={3}>
         {/* Stats Cards */}
         <Grid item xs={12} md={4}>
@@ -135,7 +194,7 @@ const DoctorDashboard = () => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} md={4}>
           <Card className="dashboard-card">
             <CardContent>
@@ -158,7 +217,7 @@ const DoctorDashboard = () => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} md={4}>
           <Card className="dashboard-card">
             <CardContent>
@@ -190,7 +249,7 @@ const DoctorDashboard = () => {
                 Today's Appointments
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              
+
               {todayAppointments.length === 0 ? (
                 <Typography variant="body1" color="text.secondary">
                   No appointments scheduled for today.
@@ -199,7 +258,7 @@ const DoctorDashboard = () => {
                 <List>
                   {todayAppointments.map((appointment) => {
                     const formattedTime = appointment.time.substring(0, 5);
-                    
+
                     return (
                       <Paper key={appointment.id} elevation={1} sx={{ mb: 2, p: 1 }}>
                         <ListItem
@@ -223,14 +282,14 @@ const DoctorDashboard = () => {
                             primary={
                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 <Typography variant="subtitle1">
-                                  {formattedTime} - {appointment.patient.user.name}
+                                  {formattedTime} - {appointment.appointmentPatient.patientUser.name}
                                 </Typography>
-                                <Chip 
-                                  label={appointment.status} 
-                                  size="small" 
+                                <Chip
+                                  label={appointment.status}
+                                  size="small"
                                   color={
-                                    appointment.status === 'scheduled' ? 'primary' : 
-                                    appointment.status === 'completed' ? 'success' : 
+                                    appointment.status === 'scheduled' ? 'primary' :
+                                    appointment.status === 'completed' ? 'success' :
                                     'default'
                                   }
                                   sx={{ ml: 1 }}
@@ -307,7 +366,7 @@ const DoctorDashboard = () => {
                 Upcoming Appointments
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              
+
               {upcomingAppointments.length === 0 ? (
                 <Typography variant="body1" color="text.secondary">
                   No upcoming appointments scheduled.
@@ -318,7 +377,7 @@ const DoctorDashboard = () => {
                     const appointmentDate = new Date(appointment.date);
                     const formattedDate = appointmentDate.toLocaleDateString();
                     const formattedTime = appointment.time.substring(0, 5);
-                    
+
                     return (
                       <Paper key={appointment.id} elevation={1} sx={{ mb: 2, p: 1 }}>
                         <ListItem
@@ -330,7 +389,7 @@ const DoctorDashboard = () => {
                             primary={
                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 <Typography variant="subtitle1">
-                                  {formattedDate} at {formattedTime} - {appointment.patient.user.name}
+                                  {formattedDate} at {formattedTime} - {appointment.appointmentPatient.patientUser.name}
                                 </Typography>
                                 {appointment.type === 'video' && (
                                   <VideoCall color="primary" sx={{ ml: 1 }} fontSize="small" />
@@ -359,7 +418,7 @@ const DoctorDashboard = () => {
                   })}
                 </List>
               )}
-              
+
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
                   component={Link}

@@ -18,7 +18,7 @@ const User = sequelize.define('User', {
   },
   password: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true // Allow null for social login
   },
   name: {
     type: DataTypes.STRING,
@@ -40,6 +40,25 @@ const User = sequelize.define('User', {
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  googleId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  facebookId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  appleId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  profilePicture: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   timestamps: true,
@@ -51,7 +70,7 @@ const User = sequelize.define('User', {
       }
     },
     beforeUpdate: async (user) => {
-      if (user.changed('password')) {
+      if (user.changed('password') && user.password) {
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
       }
@@ -61,6 +80,7 @@ const User = sequelize.define('User', {
 
 // Instance method to check password
 User.prototype.isPasswordValid = async function(password) {
+  if (!this.password) return false;
   return await bcrypt.compare(password, this.password);
 };
 

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
@@ -8,6 +8,7 @@ import Layout from './components/Layout';
 // Auth Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import SocialAuthCallback from './pages/SocialAuthCallback';
 
 // Patient Pages
 import PatientDashboard from './pages/patient/Dashboard';
@@ -21,6 +22,7 @@ import DoctorDashboard from './pages/doctor/Dashboard';
 import DoctorAppointments from './pages/doctor/Appointments';
 import DoctorPatients from './pages/doctor/Patients';
 import DoctorProfile from './pages/doctor/Profile';
+import CreateDoctorProfile from './pages/doctor/CreateProfile';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -62,14 +64,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/social-auth-callback" element={<SocialAuthCallback />} />
 
-          {/* Protected Routes with Layout */}
-          <Route path="/" element={<Layout />}>
+        {/* Protected Routes with Layout */}
+        <Route path="/" element={<Layout />}>
             {/* Patient Routes */}
             <Route
               path="patient/dashboard"
@@ -145,6 +147,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="doctor/create-profile"
+              element={
+                <ProtectedRoute allowedRoles={['doctor']}>
+                  <CreateDoctorProfile />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Admin Routes */}
             <Route
@@ -205,7 +215,6 @@ function App() {
           {/* 404 Route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </Router>
     </AuthProvider>
   );
 }

@@ -20,6 +20,10 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "passport": "^0.7.0",
+    "passport-apple": "^2.0.2",
+    "passport-facebook": "^3.0.0",
+    "passport-google-oauth20": "^2.0.0",
     "pg": "^8.15.6",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7"

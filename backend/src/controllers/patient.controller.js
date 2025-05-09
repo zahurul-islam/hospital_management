@@ -113,7 +113,7 @@ exports.getPatientAppointments = async (req, res) => {
       include: [
         {
           model: Patient,
-          as: 'patient',
+          as: 'appointmentPatient',
           include: [
             {
               model: User,
@@ -124,7 +124,7 @@ exports.getPatientAppointments = async (req, res) => {
         },
         {
           model: Doctor,
-          as: 'doctor',
+          as: 'appointmentDoctor',
           include: [
             {
               model: User,
@@ -164,7 +164,7 @@ exports.getPatientMedicalRecords = async (req, res) => {
       include: [
         {
           model: Doctor,
-          as: 'doctor',
+          as: 'doctorRecord',
           include: [
             {
               model: User,
@@ -175,7 +175,7 @@ exports.getPatientMedicalRecords = async (req, res) => {
         },
         {
           model: Appointment,
-          as: 'appointment'
+          as: 'appointmentRecord'
         }
       ],
       order: [['createdAt', 'DESC']]

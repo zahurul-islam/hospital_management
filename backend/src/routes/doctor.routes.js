@@ -19,4 +19,7 @@ router.get('/:id/appointments', verifyToken, doctorController.getDoctorAppointme
 // Get doctor's patients
 router.get('/:id/patients', verifyToken, doctorController.getDoctorPatients);
 
+// Create or update doctor profile
+router.post('/profile', verifyToken, doctorController.createDoctorProfile);
+
 module.exports = router;

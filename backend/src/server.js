@@ -3,9 +3,16 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const passport = require('passport');
 
 // Load environment variables
 dotenv.config();
+
+// Import database and models
+const db = require('./models');
+
+// Import passport configuration
+const configurePassport = require('./config/passport.config');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -26,6 +33,10 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Initialize Passport
+app.use(passport.initialize());
+configurePassport();
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -44,7 +55,7 @@ app.get('/', (req, res) => {
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   console.error(err.message, err.stack);
-  res.status(statusCode).json({ 
+  res.status(statusCode).json({
     message: err.message,
     stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack
   });
@@ -52,8 +63,14 @@ app.use((err, req, res, next) => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+
+// Sync database and start server
+db.sequelize.sync({ force: false }).then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}).catch(err => {
+  console.error('Failed to sync database:', err);
 });
 
 module.exports = app;

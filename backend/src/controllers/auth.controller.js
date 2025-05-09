@@ -5,13 +5,13 @@ const { User, Patient, Doctor } = require('../models');
 exports.register = async (req, res) => {
   try {
     const { email, password, name, role, phone, address, ...additionalData } = req.body;
-    
+
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
-    
+
     // Create user
     const user = await User.create({
       email,
@@ -21,11 +21,11 @@ exports.register = async (req, res) => {
       phone,
       address
     });
-    
+
     // Create patient or doctor profile based on role
     if (user.role === 'patient') {
       const { dateOfBirth, gender, bloodGroup, emergencyContact, medicalHistory } = additionalData;
-      
+
       await Patient.create({
         userId: user.id,
         dateOfBirth,
@@ -36,7 +36,7 @@ exports.register = async (req, res) => {
       });
     } else if (user.role === 'doctor') {
       const { specialty, qualification, experience, licenseNumber, consultationFee, bio } = additionalData;
-      
+
       await Doctor.create({
         userId: user.id,
         specialty,
@@ -47,12 +47,12 @@ exports.register = async (req, res) => {
         bio
       });
     }
-    
+
     // Generate token
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN
     });
-    
+
     // Return user data and token
     return res.status(201).json({
       message: 'User registered successfully',
@@ -74,24 +74,24 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     // Check if user exists
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     // Check if password is correct
     const isPasswordValid = await user.isPasswordValid(password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid password' });
     }
-    
+
     // Generate token
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN
     });
-    
+
     // Return user data and token
     return res.status(200).json({
       message: 'Login successful',
@@ -109,27 +109,74 @@ exports.login = async (req, res) => {
   }
 };
 
+// Social login callback
+exports.socialLoginCallback = async (req, res) => {
+  try {
+    const user = req.user;
+
+    // Check if user has a profile, if not create one
+    let profile;
+    if (user.role === 'patient') {
+      profile = await Patient.findOne({ where: { userId: user.id } });
+      if (!profile) {
+        profile = await Patient.create({
+          userId: user.id,
+          dateOfBirth: null,
+          gender: null,
+          bloodGroup: null,
+          emergencyContact: null,
+          medicalHistory: null
+        });
+      }
+    } else if (user.role === 'doctor') {
+      profile = await Doctor.findOne({ where: { userId: user.id } });
+      if (!profile) {
+        profile = await Doctor.create({
+          userId: user.id,
+          specialty: 'General',
+          qualification: null,
+          experience: null,
+          licenseNumber: null,
+          consultationFee: null,
+          bio: null
+        });
+      }
+    }
+
+    // Generate JWT token
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN
+    });
+
+    // Redirect to frontend with token
+    res.redirect(`${process.env.FRONTEND_URL}/social-auth-callback?token=${token}&userId=${user.id}`);
+  } catch (error) {
+    console.error('Social login callback error:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=Authentication failed`);
+  }
+};
+
 // Get current user profile
 exports.getProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
     const user = await User.findByPk(userId, {
       attributes: { exclude: ['password'] }
     });
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     let profile = null;
-    
+
     if (user.role === 'patient') {
       profile = await Patient.findOne({ where: { userId } });
     } else if (user.role === 'doctor') {
       profile = await Doctor.findOne({ where: { userId } });
     }
-    
+
     return res.status(200).json({
       user,
       profile
